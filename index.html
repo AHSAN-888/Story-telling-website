@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot Assistant</title>
+    <!-- Creepster and Roboto fonts from Google Fonts for a horror aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #chatBox {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        .chat-msg {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 1.1rem;
+        }
+        .user-msg {
+            align-self: flex-end;
+            background-color: var(--accent-color, #8b0000);
+            color: #fff;
+            border-bottom-right-radius: 0;
+            text-align: right;
+        }
+        .bot-msg {
+            align-self: flex-start;
+            background-color: #222;
+            color: #eee;
+            border-bottom-left-radius: 0;
+            text-align: left;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    <div class="container">
+        <header>
+            <h1>AI Chatbot Assistant</h1>
+        </header>
+
+        <main>
+            <div id="storyContainer" class="hidden">
+                <div id="chatBox"></div>
+            </div>
+
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <p>Thinking...</p>
+            </div>
+
+            <div class="input-section" style="margin-top: 20px;">
+                <textarea id="promptInput" placeholder="Ask me anything..." style="min-height: 60px;"></textarea>
+                <button id="generateBtn">Send Message</button>
+            </div>
+            
+            <div id="errorContainer" class="hidden">
+                <p id="errorText"></p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Inline script instead of script.js to satisfy the constraint -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const generateBtn = document.getElementById('generateBtn');
+            const promptInput = document.getElementById('promptInput');
+            const loadingDiv = document.getElementById('loading');
+            const storyContainer = document.getElementById('storyContainer');
+            const chatBox = document.getElementById('chatBox');
+            const errorContainer = document.getElementById('errorContainer');
+            const errorText = document.getElementById('errorText');
+
+            generateBtn.addEventListener('click', async () => {
+                const prompt = promptInput.value.trim();
+
+                if (!prompt) {
+                    showError('Please enter a message.');
+                    return;
+                }
+
+                // Append user message immediately
+                chatBox.innerHTML += `<div class="chat-msg user-msg">${prompt}</div>`;
+                promptInput.value = ''; // clear input
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                errorContainer.classList.add('hidden');
+                loadingDiv.classList.remove('hidden');
+                generateBtn.disabled = true;
+
+                // Ensure chat container is visible
+                storyContainer.classList.remove('hidden');
+
+                try {
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: prompt })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'A problem occurred from server.');
+                    }
+
+                    if (data.response) {
+                        const formattedResponse = data.response.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>');
+                        
+                        // Append bot message instead of replacing
+                        chatBox.innerHTML += `<div class="chat-msg bot-msg">${formattedResponse}</div>`;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    } else {
+                        throw new Error("Invalid response format from server.");
+                    }
+
+                } catch (err) {
+                    showError("Error: " + err.message);
+                } finally {
+                    loadingDiv.classList.add('hidden');
+                    generateBtn.disabled = false;
+                }
+            });
+
+            function showError(message) {
+                errorText.textContent = message;
+                errorContainer.classList.remove('hidden');
+            }
+
+            promptInput.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey || e.key === 'Enter') && !e.shiftKey) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        generateBtn.click();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
