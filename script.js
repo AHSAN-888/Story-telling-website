@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorContainer = document.getElementById('errorContainer');
     const errorText = document.getElementById('errorText');
 
-    const apiKey = "AIzaSyBnuI1bgrdPncN40GNoKhzfOVb3jY-SwgE";
+    const apiKey = "AIzaSyAK4EF5zhVNolQXBZjfEkxhd8Z1wikF2Vg";
     let chatHistory = [];
     const systemInstruction = `You are an AI Chatbot assistant.
 
